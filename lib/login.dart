@@ -13,31 +13,29 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  bool isRememberme=false;
+
+
   GlobalKey<FormState> formState = GlobalKey();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-
   bool _obscureText = true;
   bool _isLoading = false;
   Timer? _timer;
-  @override
-  void initState() {
-    // TODO: implement initState
-    _loadUserEmailPassword();
-  }
-  void _handleRememberMe(bool value) {
+  bool isRememberme=false;
+    void _handleRememberMe(bool value) {
     setState(() {
       isRememberme = value;
     });
 
     if (isRememberme) {
-      _saveUserEmailPassword();
+      if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+        _saveUserEmailPassword(); // Save only if both fields are filled
+      }
     } else {
-      _removeUserEmailPassword();
+      // Navigate to home if not remembering
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
-
   // Save user email and password
   Future<void> _saveUserEmailPassword() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -46,27 +44,9 @@ class _LoginState extends State<Login> {
     prefs.setBool('isRememberMe', isRememberme);
   }
 
-  // Load user email and password
-  Future<void> _loadUserEmailPassword() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      emailController.text = (prefs.getString('email') ?? "");
-      passwordController.text = (prefs.getString('password') ?? "");
-      isRememberme = (prefs.getBool('isRememberMe') ?? false);
-    });
-    if (isRememberme && emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      // Auto-login if the user has chosen to be remembered
-      postData();
-    }
-  }
 
-  // Remove user email and password
-  Future<void> _removeUserEmailPassword() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove('email');
-    prefs.remove('password');
-    prefs.remove('isRememberMe');
-  }
+
+
   void postData() async {
     if (_isLoading) return;
     setState(() {
@@ -78,10 +58,7 @@ class _LoginState extends State<Login> {
       'Content-Type': 'application/json',
     };
 
-    var request = http.Request(
-      'POST',
-      Uri.parse('https://erp.darmesk.consulting/api/method/login'),
-    );
+    var request = http.Request('POST', Uri.parse('https://erp.darmesk.consulting/api/method/login'),);
     request.body = json.encode({
       "usr": emailController.text,
       "pwd": passwordController.text,
@@ -89,7 +66,6 @@ class _LoginState extends State<Login> {
     request.headers.addAll(headers);
 
     try {
-
       _timer = Timer(Duration(seconds: 20), () {
         if (_isLoading) {
           print('Request timed out, resending...');
@@ -164,6 +140,7 @@ class _LoginState extends State<Login> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+
                       ),
                     ),
                     SizedBox(height: 40),
@@ -228,14 +205,14 @@ class _LoginState extends State<Login> {
                                   children: [
                                     Checkbox(
                                       value: isRememberme,
-                                      activeColor: Colors.black45,
+                                      activeColor: Colors.blue,
                                       onChanged: (value) => _handleRememberMe(value!),
                                     ),
                                     Text("Remember me",
-                                      )
+                                    )
                                   ],
                                 ),
-                                  SizedBox(height: 22),
+                                SizedBox(height: 22),
                                 MaterialButton(
                                   color: Colors.black,
                                   shape: RoundedRectangleBorder(
@@ -257,7 +234,7 @@ class _LoginState extends State<Login> {
                                           : Text(
                                         'Login',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Colors.blue,
                                           fontSize: 20,
                                         ),
                                       ),
@@ -296,8 +273,9 @@ class _LoginState extends State<Login> {
       obscureText: isPassword && _obscureText,
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: Icon(icon),
+        prefixIcon: Icon(icon,color: Colors.blue),
         suffixIcon: isPassword ? suffixIcon : null,
+        suffixIconColor: Colors.blue,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
           borderSide: BorderSide(color: Colors.black45),
@@ -319,6 +297,5 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 }
-
 
 
